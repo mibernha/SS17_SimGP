@@ -1,25 +1,14 @@
 package PrinterQueues;
 
 public class PrintJob {
-    private int startTimeOffset;
     private JobType jobType;
     private int processTime;
     private int priority;
 
-    public PrintJob(int statTimeOffset, JobType jobType, int processTime, int priority) {
-        this.startTimeOffset = statTimeOffset;
+    public PrintJob(JobType jobType, int processTime, int priority) {
         this.jobType = jobType;
         this.processTime = processTime;
         this.priority = priority;
-    }
-
-
-    public int getStartTimeOffset() {
-        return startTimeOffset;
-    }
-
-    public void setStartTimeOffset(int startTimeOffset) {
-        this.startTimeOffset = startTimeOffset;
     }
 
     public JobType getJobType() {

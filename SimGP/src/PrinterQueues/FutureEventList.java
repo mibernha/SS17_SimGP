@@ -14,8 +14,8 @@ public class FutureEventList {
     public int currentSimTime = 0;
     public int currentStartTimePlot = 0;
     public int currentStartTimePrint = 0;
-    public int currentEndTimePlot = 9999;
-    public int currentEndTimePrint = 9999;
+    public int currentEndTimePlot = 0;
+    public int currentEndTimePrint = 0;
     public int currentProcessTimePlot = 0;
     public int currentProcessTimePrint = 0;
     public boolean currentPlotterActive = false;
@@ -67,80 +67,85 @@ public class FutureEventList {
 
 
     }
+    @SuppressWarnings("Duplicates")
+    public void anotherPrintFEL() {
+        int avgProcessTimePlot = 0;
+        int avgProcessTimePrint = 0;
+        int numbOfPlots = prioNullPlotQueue.size() + prioOnePlotQueue.size();
+        int numbOfPrints = prioNullPrintQueue.size() + prioOnePrintQueue.size();
+        if(numbOfPlots < 1) {
+            numbOfPlots = 1;
+        }
+        if(numbOfPrints < 1) {
+            numbOfPrints = 1;
+        }
 
-    //get next time from next event
-    public void printFEL() {
-        while(!prioOnePrintQueue.isEmpty() || !prioNullPrintQueue.isEmpty() || !prioNullPlotQueue.isEmpty() || !prioOnePlotQueue.isEmpty() || !printer.ready() || !plotter.ready()) {
-            //first check if printer or plotter is ready, if yes look for matching print-jobs
-            if (!currentPrinterActive) {
-                if (!prioOnePrintQueue.isEmpty()) {
-                    PrintJob pj = prioOnePrintQueue.get(0);
-                    if(pj.getStartTimeOffset() <= currentEndTimePrint && pj.getStartTimeOffset() <= currentEndTimePlot) {
-                        currentSimTime = pj.getStartTimeOffset();
-                        currentStartTimePrint = currentSimTime;
-                        currentProcessTimePrint = pj.getProcessTime();
-                        currentEndTimePrint = currentSimTime + currentProcessTimePrint;
-                        printer.print(pj);
-                        currentPrinterActive = true;
-                        removeFromPrioOnePrintQueue();
-                    }
-                } else if (!prioNullPrintQueue.isEmpty()) {
-                    PrintJob pj = prioNullPrintQueue.get(0);
-                    if(pj.getStartTimeOffset() <= currentEndTimePrint && pj.getStartTimeOffset() <= currentEndTimePlot) {
-                        currentSimTime = pj.getStartTimeOffset();
-                        currentStartTimePrint = currentSimTime;
-                        currentProcessTimePrint = pj.getProcessTime();
-                        currentEndTimePrint = currentSimTime + currentProcessTimePrint;
-                        printer.print(pj);
-                        currentPrinterActive = true;
-                        removeFromPrioNullPrintQueue();
-                    }
+        while(!prioOnePlotQueue.isEmpty() || !prioNullPlotQueue.isEmpty() || !prioOnePrintQueue.isEmpty() || !prioNullPrintQueue.isEmpty()) {
+            PrintJob pj;
+            if(!currentPlotterActive) {
+                if(!prioOnePlotQueue.isEmpty()) {
+                    pj = prioOnePlotQueue.get(0);
+                    removeFromPrioOnePlotQueue();
+                    currentStartTimePlot = currentSimTime;
+                    currentProcessTimePlot = pj.getProcessTime();
+                    avgProcessTimePlot += pj.getProcessTime();
+                    currentEndTimePlot = currentSimTime + currentProcessTimePlot;
+                    currentPlotterActive = true;
+                } else if(!prioNullPlotQueue.isEmpty()) {
+                    pj = prioNullPlotQueue.get(0);
+                    removeFromPrioNullPlotQueue();
+                    currentStartTimePlot = currentSimTime;
+                    currentProcessTimePlot = pj.getProcessTime();
+                    avgProcessTimePlot += pj.getProcessTime();
+                    currentEndTimePlot = currentSimTime + currentProcessTimePlot;
+                    currentPlotterActive = true;
                 }
-            } else if (!currentPlotterActive) {
-                if (!prioOnePlotQueue.isEmpty()) {
-                    PrintJob pj = prioOnePlotQueue.get(0);
-                    if(pj.getStartTimeOffset() <= currentEndTimePrint && pj.getStartTimeOffset() <= currentEndTimePlot) {
-                        currentSimTime = pj.getStartTimeOffset();
-                        currentStartTimePlot = currentSimTime;
-                        currentProcessTimePlot = pj.getProcessTime();
-                        currentEndTimePlot = currentSimTime + currentProcessTimePlot;
-                        plotter.plot(pj);
-                        currentPlotterActive = true;
-                        removeFromPrioOnePlotQueue();
-                    }
-                } else if (!prioNullPlotQueue.isEmpty()) {
-                    PrintJob pj = prioNullPlotQueue.get(0);
-                    if(pj.getStartTimeOffset() <= currentEndTimePrint && pj.getStartTimeOffset() <= currentEndTimePlot) {
-                        currentSimTime = pj.getStartTimeOffset();
-                        currentStartTimePlot = currentSimTime;
-                        currentProcessTimePlot = pj.getProcessTime();
-                        currentEndTimePlot = currentSimTime + currentProcessTimePlot;
-                        plotter.plot(pj);
-                        currentPlotterActive = true;
-                        removeFromPrioNullPlotQueue();
-                    }
+            }
+            if(!currentPrinterActive) {
+                if(!prioOnePrintQueue.isEmpty()) {
+                    pj = prioOnePrintQueue.get(0);
+                    removeFromPrioOnePrintQueue();
+                    currentStartTimePrint = currentSimTime;
+                    currentProcessTimePrint = pj.getProcessTime();
+                    avgProcessTimePrint += pj.getProcessTime();
+                    currentEndTimePrint = currentSimTime + currentProcessTimePrint;
+                    currentPrinterActive = true;
+                } else if(!prioNullPrintQueue.isEmpty()) {
+                    pj = prioNullPrintQueue.get(0);
+                    removeFromPrioNullPrintQueue();
+                    currentStartTimePrint = currentSimTime;
+                    currentProcessTimePrint = pj.getProcessTime();
+                    avgProcessTimePrint += pj.getProcessTime();
+                    currentEndTimePrint = currentSimTime + currentProcessTimePrint;
+                    currentPrinterActive = true;
                 }
-            //none of the printer/Plotter is ready, so we take the next lowest time, an end of a plot/print
-            //Options for lowest: StartTimes Plot/Print, EndTime Plot/Print
-            } else {
-               if(currentEndTimePlot < currentEndTimePrint) {
-                   currentSimTime = currentEndTimePlot;
-                   currentProcessTimePlot = 0;
-                   currentStartTimePlot = 0;
-                   currentPlotterActive = false;
-                   System.out.println("Print < Plot");
-               } else {
-                   currentSimTime = currentEndTimePrint;
-                   currentProcessTimePrint = 0;
-                   currentStartTimePlot = 0;
-                   currentPrinterActive = false;
-                   System.out.println("Print > Plot");
-               }
             }
 
             System.out.format("%15d%15d%15d%15d%15d%15d%15d%15d%15d%15s%15d%15d%15s%n", currentSimTime, currentStartTimePlot, currentStartTimePrint,
                     currentProcessTimePlot, currentProcessTimePrint, currentEndTimePlot, currentEndTimePrint, prioNullPlotQueue.size(), prioOnePlotQueue.size(),
                     currentPlotterActive, prioNullPrintQueue.size(), prioOnePrintQueue.size(), currentPrinterActive);
+
+            if(currentPrinterActive || currentPlotterActive) {
+                if(currentEndTimePlot < currentEndTimePrint) {
+                    currentSimTime = currentEndTimePlot;
+                    currentPlotterActive = false;
+                    currentEndTimePlot = 999999;
+                    currentProcessTimePlot = 0;
+                    currentStartTimePlot = 0;
+                } else {
+                    currentSimTime = currentEndTimePrint;
+                    currentPrinterActive = false;
+                    currentEndTimePrint = 999999;
+                    currentProcessTimePrint = 0;
+                    currentStartTimePrint = 0;
+                }
+            }
         }
+        System.out.format("%15d%15d%15d%15d%15d%15d%15d%15d%15d%15s%15d%15d%15s%n", currentSimTime, currentStartTimePlot, currentStartTimePrint,
+                currentProcessTimePlot, currentProcessTimePrint, currentEndTimePlot, currentEndTimePrint, prioNullPlotQueue.size(), prioOnePlotQueue.size(),
+                currentPlotterActive, prioNullPrintQueue.size(), prioOnePrintQueue.size(), currentPrinterActive);
+
+        System.out.println("Average Processtime Plotter: " + avgProcessTimePlot/numbOfPlots);
+        System.out.println("Average Processtime Printer: " + avgProcessTimePrint/numbOfPrints);
     }
 }
